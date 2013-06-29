@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<style>
+  @font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+    src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(opensans.woff) format('woff');
+  }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    font-family: 'Open Sans';
+    font-weight: 600;
+  }
+
+  .colors {
+    width: 100%;
+  }
+
+  #logo {
+    margin: 8px;
+  }
+
+  #colors-bottom {
+    position: fixed;
+    height: 40px;
+    bottom: 0px;
+  }
+
+  #links a {
+    display: inline-block;
+    padding: 3px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: black;
+    background-color: #eee;
+    text-decoration: none;
+    width: 16px;
+    margin-top: 20px;
+    margin-bottom: 16px;
+  }
+</style>
+
+<div class="colors" id="colors-top"></div>
+
+<img src="logos/a.jpg" id="logo">
+<canvas id="canvas" style="display:none"></canvas>
+
+<div id="text" style="float: right; margin-right: 32px; width: 50%;">
+  <h2>Lorem Ipsum</h2>
+  <br>
+  Lorem ipsum dolor sit amet, nam et assum omnium quaestio, ius dolor insolens cu, quis ancillae ei nam. Pro in tibique epicuri omittantur. Malis iusto ei duo. Pro assum aliquip inimicus in. Cu nec summo deleniti argumentum, quo te novum alterum legendos, in deseruisse philosophia sit. Ex cum maluisset argumentum signiferumque, te sit odio dolorem cotidieque, vide eius aliquando no quo.
+
+  Vel agam eruditi dolorum at. Ut vis modus audire, debet utroque ius an. Eum equidem imperdiet vituperata ea, urbanitas tincidunt cu eos. Dolores disputationi ut eam. Graece accusam sea eu, ei brute tollit contentiones nec, ea elitr partem usu.
+</div>
+
+<br style="clear: both;">
+<div style="text-align: center" id="links"></div>
+
+<div class="colors" id="colors-bottom"></div>
+
+
+<script src="js/jquery.js"></script>
+<script src="js/KMeans.js"></script>
+<script src="js/Octree.js"></script>
+<script src="js/ColorAnalyser.js"></script>
+
+<script>
+  function getURLParameter(name) {
+    return decodeURI(
+      (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
+    );
+  }
+
+  var imgSrc = getURLParameter('logo');
+  if (imgSrc && imgSrc != 'null') {
+    $('#logo').attr('src', 'logos/' + imgSrc);
+  }
+
+  var alphabet = "abcdefghijklmnopqrstuvwxyz";
+  for (var i = 0; i != 26; i++) {
+    var letter = alphabet.charAt(i);
+    var $link = $('<a href="?logo=' + letter + '.jpg">' + letter + '</a>');
+    $('#links').append($link).append('&nbsp; &nbsp;');
+  }
+
+  var analyseImage = function() {
+    var img = $('#logo')[0];
+    var canvas = $('#canvas')[0];
+
+    var analyser = new ColorAnalyser(img, canvas);
+
+    var bgColor = analyser.detectBackground();
+
+    $('body').css('background-color', 'rgb(' + bgColor[0] + ', ' + bgColor[1] + ', ' + bgColor[2] + ')');
+
+    var i;
+    var palette = analyser.analyseImage(6, bgColor);
+    //var palette = analyser.getThresholdedPalette(0.6, 128, bgColor, 32);
+
+    var textColor = analyser.chooseTextColor(bgColor);
+    var colorString = 'rgb(' + textColor[0] + ', ' + textColor[1] + ', ' + textColor[2] + ')';
+
+    console.log(bgColor);
+    console.log(textColor);
+    console.log( bgColor[0] - textColor[0], bgColor[1] - textColor[1], bgColor[2] - textColor[2] )
+
+    $('body').css('color', colorString);
+
+    var colors = palette[0];
+    var numPixels = palette[1];
+
+    for (i = 0; i != colors.length; i++) {
+      var r = colors[i][0][0];
+      var g = colors[i][0][1];
+      var b = colors[i][0][2];
+      var count = colors[i][1];
+
+      var colorString = "rgb(" + Math.round(r) + "," + Math.round(g) + "," + Math.round(b) + ")";
+
+      var $previewTop = $('<div style="width: 16.6666%; height: 80px; background-color: black; display: inline-block;"></div>');
+      $previewTop.css('background-color', colorString);
+      var $previewBottom = $previewTop.clone();
+      //$preview.text(count);
+      $('#colors-top').append($previewTop);
+      $('#colors-bottom').append($previewBottom);
+    }
+  };
+
+  window.onload = analyseImage;
+</script>
