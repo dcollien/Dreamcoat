@@ -105,11 +105,8 @@ Color Analyser
      
         [r * 255, g * 255, b * 255]
 
-      chooseTextColor: (backgroundColor) ->
+      chooseTextColor: (backgroundColor, palette=null) ->
         [r, g, b] = backgroundColor
-
-
-        luminance = 1 - (0.299 * r + 0.587 * g + 0.114 * b)
 
         [h, s, l] = @rgbToHsl r, g, b
 
@@ -117,16 +114,47 @@ Color Analyser
         h += 0.5
         if h > 1 then h -= 1
 
+        # invert saturation, and desaturate a little more
         s = (1 - s) * 0.25
 
-        if luminance < 0.5
-          l *= 1.2
+        # invert lightness
+        l = (1 - l)
+
+        # increase contrast for lightness near grey
+        if l < 0.5
+          l = -l + 0.5
+        else if l > 0.5
+          l = -l + 1.5
         else
-          l /= 1.2
+          l = 1
 
-        l = (1 - l) * (1 - l)
 
-        return (@hslToRgb h, s, l).map Math.floor
+        # if a color palette has been provided, use it to affect the text color
+        if palette?
+          lerp = (t, from, to) -> t * to + (1-t) * from
+
+          # find the mode color in the palette
+          [modeColor, modeCount] = palette[0]
+
+          for [color, count] in palette
+            if count > modeCount
+              modeCount = count
+              modeColor = color
+
+          # convert to HSL
+          [mR, mG, mB] = modeColor
+          [mH, mS, mL] = @rgbToHsl mR, mG, mB
+
+          # take the minimum saturation so far
+          s = Math.min s, mS
+
+          # shift the hue towards the mode color
+          h = lerp 0.75, h, mH
+
+        # convert back to RGB
+        rgb = (@hslToRgb h, s, l).map Math.floor
+
+        return rgb
 
       analyseImage: (paletteSize, background=null, ignoreGrey=false) ->
         if not background? then background = @detectBackground()

@@ -152,23 +152,45 @@ ColorAnalyser = (function() {
     return [r * 255, g * 255, b * 255];
   };
 
-  ColorAnalyser.prototype.chooseTextColor = function(backgroundColor) {
-    var b, g, h, l, luminance, r, s, _ref;
+  ColorAnalyser.prototype.chooseTextColor = function(backgroundColor, palette) {
+    var b, color, count, g, h, l, lerp, mB, mG, mH, mL, mR, mS, modeColor, modeCount, r, rgb, s, _i, _len, _ref, _ref1, _ref2, _ref3;
+    if (palette == null) {
+      palette = null;
+    }
     r = backgroundColor[0], g = backgroundColor[1], b = backgroundColor[2];
-    luminance = 1 - (0.299 * r + 0.587 * g + 0.114 * b);
     _ref = this.rgbToHsl(r, g, b), h = _ref[0], s = _ref[1], l = _ref[2];
     h += 0.5;
     if (h > 1) {
       h -= 1;
     }
     s = (1 - s) * 0.25;
-    if (luminance < 0.5) {
-      l *= 1.2;
+    l = 1 - l;
+    if (l < 0.5) {
+      l = -l + 0.5;
+    } else if (l > 0.5) {
+      l = -l + 1.5;
     } else {
-      l /= 1.2;
+      l = 1;
     }
-    l = (1 - l) * (1 - l);
-    return (this.hslToRgb(h, s, l)).map(Math.floor);
+    if (palette != null) {
+      lerp = function(t, from, to) {
+        return t * to + (1 - t) * from;
+      };
+      _ref1 = palette[0], modeColor = _ref1[0], modeCount = _ref1[1];
+      for (_i = 0, _len = palette.length; _i < _len; _i++) {
+        _ref2 = palette[_i], color = _ref2[0], count = _ref2[1];
+        if (count > modeCount) {
+          modeCount = count;
+          modeColor = color;
+        }
+      }
+      mR = modeColor[0], mG = modeColor[1], mB = modeColor[2];
+      _ref3 = this.rgbToHsl(mR, mG, mB), mH = _ref3[0], mS = _ref3[1], mL = _ref3[2];
+      s = Math.min(s, mS);
+      h = lerp(0.75, h, mH);
+    }
+    rgb = (this.hslToRgb(h, s, l)).map(Math.floor);
+    return rgb;
   };
 
   ColorAnalyser.prototype.analyseImage = function(paletteSize, background, ignoreGrey) {

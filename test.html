@@ -22,6 +22,8 @@
 
   #logo {
     margin: 8px;
+    max-width: 420px;
+    max-height: 320px;
   }
 
   #colors-bottom {
@@ -33,21 +35,28 @@
   #links a {
     display: inline-block;
     padding: 3px;
-    border: 1px solid #444;
+    border: 1px solid #888;
     border-radius: 4px;
-    color: black;
+    color: #444;
     background-color: #eee;
     text-decoration: none;
-    width: 16px;
+    width: 24px;
     margin-top: 20px;
     margin-bottom: 16px;
+  }
+
+  #links a:hover {
+    background-color: #ddd;
   }
 </style>
 
 <div class="colors" id="colors-top"></div>
 
-<img src="logos/a.jpg" id="logo">
-<canvas id="canvas" style="display:none"></canvas>
+<div id="dropZone" style="display: inline-block;">
+  <img src="logos/a.jpg" id="logo">
+  <canvas id="canvas" style="display:none"></canvas>
+  <div style="text-align: center"><input type="file" id="file-chooser"></div>
+</div>
 
 <div id="text" style="float: right; margin-right: 32px; width: 50%;">
   <h2>Lorem Ipsum</h2>
@@ -87,8 +96,14 @@
     $('#links').append($link).append('&nbsp; &nbsp;');
   }
 
-  var analyseImage = function() {
-    var img = $('#logo')[0];
+  var analyseImage = function(img) {
+
+    if (!img) {
+      img = $('#logo')[0];
+    } else {
+      $('#logo').attr('src', $(img).attr('src'));
+    }
+
     var canvas = $('#canvas')[0];
 
     var analyser = new ColorAnalyser(img, canvas);
@@ -101,17 +116,18 @@
     var palette = analyser.analyseImage(6, bgColor);
     //var palette = analyser.getThresholdedPalette(0.6, 128, bgColor, 32);
 
-    var textColor = analyser.chooseTextColor(bgColor);
-    var colorString = 'rgb(' + textColor[0] + ', ' + textColor[1] + ', ' + textColor[2] + ')';
+    var colors = palette[0];
+    var numPixels = palette[1];
 
-    console.log(bgColor);
-    console.log(textColor);
-    console.log( bgColor[0] - textColor[0], bgColor[1] - textColor[1], bgColor[2] - textColor[2] )
+    var textColor = analyser.chooseTextColor(bgColor, colors);
+    var colorString = 'rgb(' + textColor[0] + ', ' + textColor[1] + ', ' + textColor[2] + ')';
 
     $('body').css('color', colorString);
 
-    var colors = palette[0];
-    var numPixels = palette[1];
+
+
+    $('#colors-top').empty();
+    $('#colors-bottom').empty();
 
     for (i = 0; i != colors.length; i++) {
       var r = colors[i][0][0];
@@ -124,11 +140,52 @@
       var $previewTop = $('<div style="width: 16.6666%; height: 80px; background-color: black; display: inline-block;"></div>');
       $previewTop.css('background-color', colorString);
       var $previewBottom = $previewTop.clone();
+
+      $previewTop.text(count);
       //$preview.text(count);
       $('#colors-top').append($previewTop);
       $('#colors-bottom').append($previewBottom);
     }
   };
 
-  window.onload = analyseImage;
+  var handleNewImage = function(event) {
+    event.preventDefault( );
+
+    var supported = window.File && window.FileReader && window.FileList && window.Blob;
+  
+    if (!supported) {
+      alert("Your browser can't do this :( Try using Safari 5.2+, Chrome, Firefox or IE 10+");
+      return;
+    }
+  
+    var dropEvent = event.originalEvent;
+    var files = (dropEvent.target.files) || (dropEvent.dataTransfer.files);
+    var file = files[0];
+
+    var reader = new FileReader();
+  
+    reader.onload = function (readerEvent) {
+      var image = new Image();
+      image.onload = function (imageEvent) {
+        console.log('image', image);
+        analyseImage(image);
+      }
+
+      image.src = readerEvent.target.result;
+    }
+
+    reader.onerror = function (readerEvent) {
+      console.log(readerEvent);
+    }
+
+    reader.readAsDataURL(file);
+  };
+
+  window.onload = function() {
+
+    $('#dropZone').on('drop', handleNewImage);
+    $('#file-chooser').bind('change', handleNewImage);
+
+    analyseImage();
+  }
 </script>
