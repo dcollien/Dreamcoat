@@ -9,4 +9,4 @@ Some other analysis tools are included which attempt to detect the background co
 
 [See a demonstration here.](test.html)
 
-*changed after being bullied by Schematic Ltd. who own the AutoScheme trademark
+*changed as Schematic Ltd. own the AutoScheme trademark and don't want anything else called AutoScheme to show up in google search results when people search for AutoScheme.
